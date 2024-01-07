@@ -1,0 +1,9 @@
+[package]
+name = "hmac"
+type = "lib"
+authors = ["nonso"]
+compiler_version = ">=0.10.5"
+
+[dependencies]
+sha1 = { tag = "v0.0.4", git = "https://github.com/michaelelliot/noir-sha1", directory = "crates/noir-sha1" }
+hmac_utils = { path = "../hmac_utils" }
