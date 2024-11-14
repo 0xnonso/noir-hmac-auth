@@ -1,2 +1,7 @@
-[workspace]
-members = ["crates/hmac", "example"]
+[package]
+name = "noir_hmac"
+type = "lib"
+authors = [""]
+compiler_version = ">=0.34.0"
+
+[dependencies]
