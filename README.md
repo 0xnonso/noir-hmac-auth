@@ -17,11 +17,9 @@ hmac = { git = "https://github.com/0xnonso/noir-hmac-auth" }
 Then use it in your Noir project like this:
 
 ```rust
-use dep::hmac::types::HHSha256;
-use dep::hmac::types::HmacHasherSha256;
+use dep::hmac;
 
 fn main(key: [u8; 40], message: [u8; 128], expected_mac_tag: [u8; 32]) {
-    let H: HHSha256 = HmacHasherSha256 {};
-    assert(expected_mac_tag == H.hmac(key, message));
+    assert(expected_mac_tag == hmac::hmac_sha256(key, message));
 }
 ```
