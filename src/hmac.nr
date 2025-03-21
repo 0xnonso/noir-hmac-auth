@@ -97,7 +97,7 @@ where
     hasher.hash(outer_key_pad_extended)
 }
 
-pub fn hmac256<let MsgSize: u32, let KeySize: u32>(
+pub fn hmac_sha256<let MsgSize: u32, let KeySize: u32>(
     key: [u8; KeySize],
     msg: [u8; MsgSize],
 ) -> [u8; 32] {
