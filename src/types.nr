@@ -18,9 +18,9 @@ impl HmacHasher<OutputSizeSha256, BlockSizeSha256> for Hasher<OutputSizeSha256, 
         self,
         msg: [u8; InputSize],
     ) -> [u8; OutputSizeSha256] {
-        std::hash::sha256_var(msg, InputSize as u64)
+        std::hash::sha256(msg)
     }
     fn hash<let InputSize: u32>(self, msg: [u8; InputSize]) -> [u8; OutputSizeSha256] {
-        std::hash::sha256_var(msg, InputSize as u64)
+        std::hash::sha256(msg)
     }
 }

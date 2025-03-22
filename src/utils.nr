@@ -1,5 +1,13 @@
 use crate::types::HmacHasher;
 
+pub fn xor<let N: u32>(a: [u8; N], b: [u8; N]) -> [u8; N] {
+    let mut result = [0; N];
+    for i in 0..N {
+        result[i] = a[i] ^ b[i];
+    }
+    result
+}
+
 pub unconstrained fn __xor<let N: u32>(a: [u8; N], b: [u8; N]) -> [u8; N] {
     let mut result = [0; N];
     for i in 0..N {
@@ -46,7 +54,7 @@ pub unconstrained fn __compute_key_pad_ext<let N: u32, let BlockSize: u32>(
     inner_key_pad_extended
 }
 
-pub fn __constrain_xor(a: u8, b: u8, c: u8) {
+pub fn constrain_xor(a: u8, b: u8, c: u8) {
     let _a = a as Field;
     let _b = b as Field;
     let _d: [u1; 8] = _a.to_be_bits();

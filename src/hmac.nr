@@ -47,51 +47,45 @@ pub fn hmac<let MsgSize: u32, let KeySize: u32, let OutputSize: u32, let BlockSi
 where
     T: HmacHasher<OutputSize, BlockSize>,
 {
-    /// Safety: compute blocked key.
-    let blocked_key: [u8; BlockSize] = unsafe { utils::__compute_blocked_key(hasher, key) };
-
+    let mut blocked_key: [u8; BlockSize] = [0; BlockSize];
     if KeySize > BlockSize {
         let key_hash: [u8; OutputSize] = hasher.hash(key);
         for i in 0..OutputSize {
-            assert_eq(key_hash[i], blocked_key[i]);
-        }
-        for i in OutputSize..BlockSize {
-            assert_eq(blocked_key[i], 0);
+            blocked_key[i] = key_hash[i];
         }
     } else {
         for i in 0..KeySize {
-            assert_eq(blocked_key[i], key[i]);
-        }
-        for i in KeySize..BlockSize {
-            assert_eq(blocked_key[i], 0);
+            blocked_key[i] = key[i];
         }
     }
 
-    /// Safety: compute extended inner key padding.
-    let inner_key_pad_extended: [u8; BlockSize + MsgSize] =
-        unsafe { utils::__compute_key_pad_ext(IPAD, blocked_key, msg) };
+    let inner_pad: [u8; BlockSize] = [IPAD; BlockSize];
+    let inner_key_pad = utils::xor(inner_pad, blocked_key) ;
 
+    let mut inner_key_pad_extended: [u8; MsgSize + BlockSize] = [0; MsgSize + BlockSize];
     for i in 0..BlockSize {
-        assert_eq(blocked_key[i] ^ IPAD, inner_key_pad_extended[i]);
+        inner_key_pad_extended[i] = inner_key_pad[i];
     }
     for i in BlockSize..(BlockSize + MsgSize) {
-        assert_eq(inner_key_pad_extended[i], msg[i - BlockSize]);
+        inner_key_pad_extended[i] = msg[i - BlockSize];
     }
 
-    /// Safety: compute hash('extended inner key padding')
-    let inner_hash: [u8; OutputSize] = unsafe { hasher.hash_unconstrained(inner_key_pad_extended) };
-
+    /// Safety: Seems to be the only way to bypass this error - There is no path from the output of this 
+    /// Brillig call to either return values or inputs of the circuit, which creates an independent subgraph. 
+    /// This is quite likely a soundness vulnerability.
+    let inner_hash = unsafe { hasher.hash_unconstrained(inner_key_pad_extended) };
     assert_eq(hasher.hash(inner_key_pad_extended), inner_hash);
 
-    /// Safety: compute extended outer key padding.
-    let outer_key_pad_extended: [u8; OutputSize + BlockSize] =
-        unsafe { utils::__compute_key_pad_ext(OPAD, blocked_key, inner_hash) };
+    let outer_pad: [u8; BlockSize] = [OPAD; BlockSize];
+
+    let outer_key_pad = utils::xor(outer_pad, blocked_key);
+    let mut outer_key_pad_extended: [u8; OutputSize + BlockSize] = [0; OutputSize + BlockSize];
 
     for i in 0..BlockSize {
-        assert(blocked_key[i] ^ OPAD == outer_key_pad_extended[i]);
+        outer_key_pad_extended[i] = outer_key_pad[i];
     }
-    for i in BlockSize..BlockSize + OutputSize {
-        assert_eq(outer_key_pad_extended[i], inner_hash[i - BlockSize]);
+    for i in BlockSize..(BlockSize + OutputSize) {
+        outer_key_pad_extended[i] = inner_hash[i - BlockSize];
     }
 
     hasher.hash(outer_key_pad_extended)
