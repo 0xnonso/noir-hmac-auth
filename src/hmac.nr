@@ -1,4 +1,4 @@
-use crate::types::{Hasher, HmacHasher, Sha256Hasher};
+use crate::types::{Hasher, HmacHasher, Sha256Hasher, Sha512Hasher};
 use crate::utils;
 
 global IPAD: u8 = 0x36;
@@ -60,7 +60,7 @@ where
     }
 
     let inner_pad: [u8; BlockSize] = [IPAD; BlockSize];
-    let inner_key_pad = utils::xor(inner_pad, blocked_key) ;
+    let inner_key_pad = utils::xor(inner_pad, blocked_key);
 
     let mut inner_key_pad_extended: [u8; MsgSize + BlockSize] = [0; MsgSize + BlockSize];
     for i in 0..BlockSize {
@@ -70,11 +70,7 @@ where
         inner_key_pad_extended[i] = msg[i - BlockSize];
     }
 
-    /// Safety: Seems to be the only way to bypass this error - There is no path from the output of this 
-    /// Brillig call to either return values or inputs of the circuit, which creates an independent subgraph. 
-    /// This is quite likely a soundness vulnerability.
-    let inner_hash = unsafe { hasher.hash_unconstrained(inner_key_pad_extended) };
-    assert_eq(hasher.hash(inner_key_pad_extended), inner_hash);
+    let inner_hash = hasher.hash(inner_key_pad_extended);
 
     let outer_pad: [u8; BlockSize] = [OPAD; BlockSize];
 
@@ -96,6 +92,14 @@ pub fn hmac_sha256<let MsgSize: u32, let KeySize: u32>(
     msg: [u8; MsgSize],
 ) -> [u8; 32] {
     let H: Sha256Hasher = Hasher {};
+    hmac(H, key, msg)
+}
+
+pub fn hmac_sha512<let MsgSize: u32, let KeySize: u32>(
+    key: [u8; KeySize],
+    msg: [u8; MsgSize],
+) -> [u8; 64] {
+    let H: Sha512Hasher = Hasher {};
     hmac(H, key, msg)
 }
 
@@ -198,4 +202,36 @@ fn hmac_sha256_test() {
     ];
 
     assert_eq(expected_mac_tag_bytes_6, hmac(H, key_6, message_6));
+}
+
+#[test]
+fn hmac_sha512_test() {
+    let H: Sha512Hasher = Hasher {};
+
+    let key_1 = "Jefe".as_bytes();
+    let message_1 = "what do ya want for nothing?".as_bytes();
+    let expected_mac_tag_bytes_1 = [
+        0x16, 0x4b, 0x7a, 0x7b, 0xfc, 0xf8, 0x19, 0xe2, 0xe3, 0x95, 0xfb, 0xe7, 0x3b, 0x56, 0xe0,
+        0xa3, 0x87, 0xbd, 0x64, 0x22, 0x2e, 0x83, 0x1f, 0xd6, 0x10, 0x27, 0x0c, 0xd7, 0xea, 0x25,
+        0x05, 0x54, 0x97, 0x58, 0xbf, 0x75, 0xc0, 0x5a, 0x99, 0x4a, 0x6d, 0x03, 0x4f, 0x65, 0xf8,
+        0xf0, 0xe6, 0xfd, 0xca, 0xea, 0xb1, 0xa3, 0x4d, 0x4a, 0x6b, 0x4b, 0x63, 0x6e, 0x07, 0x0a,
+        0x38, 0xbc, 0xe7, 0x37,
+    ];
+
+    assert(expected_mac_tag_bytes_1 == hmac(H, key_1, message_1));
+
+    let key_2 = [
+        0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+        0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+    ];
+    let message_2 = "Hi There".as_bytes();
+    let expected_mac_tag_bytes_2 = [
+        0x87, 0xaa, 0x7c, 0xde, 0xa5, 0xef, 0x61, 0x9d, 0x4f, 0xf0, 0xb4, 0x24, 0x1a, 0x1d, 0x6c,
+        0xb0, 0x23, 0x79, 0xf4, 0xe2, 0xce, 0x4e, 0xc2, 0x78, 0x7a, 0xd0, 0xb3, 0x05, 0x45, 0xe1,
+        0x7c, 0xde, 0xda, 0xa8, 0x33, 0xb7, 0xd6, 0xb8, 0xa7, 0x02, 0x03, 0x8b, 0x27, 0x4e, 0xae,
+        0xa3, 0xf4, 0xe4, 0xbe, 0x9d, 0x91, 0x4e, 0xeb, 0x61, 0xf1, 0x70, 0x2e, 0x69, 0x6c, 0x20,
+        0x3a, 0x12, 0x68, 0x54,
+    ];
+
+    assert(expected_mac_tag_bytes_2 == hmac(H, key_2, message_2));
 }

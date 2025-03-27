@@ -2,3 +2,4 @@ target/
 main.nr
 Prover.toml
 .DS_Store
+*.txt

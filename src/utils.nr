@@ -25,7 +25,7 @@ where
 {
     let mut blocked_key: [u8; BlockSize] = [0; BlockSize];
     if KeySize > BlockSize {
-        let key_hash: [u8; OutputSize] = hasher.hash_unconstrained(key);
+        let key_hash: [u8; OutputSize] = hasher.hash(key);
         for i in 0..OutputSize {
             blocked_key[i] = key_hash[i];
         }
